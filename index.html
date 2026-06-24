@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LPPAPSI Bot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- ================= START SCREEN ================= -->
+<div id="start-screen" class="screen active">
+    <div class="center-box">
+        <img src="{{ url_for('static', filename='ai icon.jpg') }}" class="robot-img">
+        <button id="start-btn">Mulai</button>
+    </div>
+</div>
+
+<!-- ================= CHAT SCREEN ================= -->
+<div id="chat-screen" class="screen">
+
+    <div class="chat-header">
+        <img src="{{ url_for('static', filename='ai icon.jpg') }}" class="header-icon">
+        LPPAPSI Bot
+    </div>
+
+    <div id="chat-box" class="chat-box"></div>
+
+    <div id="button-area" class="button-area"></div>
+
+    <div class="input-area">
+        <input type="text" id="message" placeholder="Ketik Pesan...">
+        <button id="send-btn">Kirim</button>
+    </div>
+
+</div>
+
+<script>
+
+const startBtn = document.getElementById("start-btn");
+const chatScreen = document.getElementById("chat-screen");
+const startScreen = document.getElementById("start-screen");
+
+startBtn.addEventListener("click", function(){
+    startScreen.classList.remove("active");
+    chatScreen.classList.add("active");
+});
+
+document.getElementById("send-btn").addEventListener("click", sendMessage);
+
+function addMessage(text, sender){
+    const chatBox = document.getElementById("chat-box");
+    const msg = document.createElement("div");
+    msg.className = sender === "user" ? "user-msg" : "bot-msg";
+    msg.innerText = text;
+    chatBox.appendChild(msg);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function sendMessage(){
+    const input = document.getElementById("message");
+    const text = input.value.trim();
+    if(!text) return;
+
+    addMessage(text, "user");
+    input.value = "";
+
+    fetch("/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({message: text})
+    })
+    .then(res => res.json())
+    .then(data => {
+        addMessage(data.reply, "bot");
+        showButtons(data.buttons);
+    })
+    .catch(error => {
+        addMessage("Server error", "bot");
+    });
+}
+
+function showButtons(buttons){
+    const area = document.getElementById("button-area");
+    area.innerHTML = "";
+
+    buttons.forEach(btn => {
+        const button = document.createElement("button");
+        button.className = "menu-btn";
+        button.innerText = btn.text;
+        button.onclick = () => menuClick(btn.callback);
+        area.appendChild(button);
+    });
+}
+
+function menuClick(callback){
+    fetch("/menu_click", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({callback: callback})
+    })
+    .then(res => res.json())
+    .then(data => {
+        addMessage(data.reply, "bot");
+        showButtons(data.buttons);
+    });
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,103 @@
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LPPAPSI Bot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- ============ START SCREEN ============ -->
+<div id="start-screen">
+    <div class="start-content">
+        <div class="robot">🤖</div>
+        <button onclick="startChat()">Mulai</button>
+    </div>
+</div>
+
+<!-- ============ CHAT SCREEN ============ -->
+<div id="chat-screen" class="hidden">
+
+    <div class="chat-header">
+        🤖 LPPAPSI Bot
+    </div>
+
+    <div id="chat-box" class="chat-box"></div>
+
+    <div id="button-area"></div>
+
+    <div class="input-area">
+        <input type="text" id="message" placeholder="Ketik Pesan...">
+        <button onclick="sendMessage()">Kirim</button>
+    </div>
+
+</div>
+
+<script>
+function startChat(){
+    document.getElementById("start-screen").classList.add("hidden");
+    document.getElementById("chat-screen").classList.remove("hidden");
+}
+
+function addMessage(text, sender){
+    const chatBox = document.getElementById("chat-box");
+    const msg = document.createElement("div");
+    msg.className = sender === "user" ? "user-msg" : "bot-msg";
+    msg.innerText = text;
+    chatBox.appendChild(msg);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function sendMessage(){
+    const input = document.getElementById("message");
+    const text = input.value;
+    if(!text) return;
+
+    addMessage(text, "user");
+    input.value = "";
+
+    fetch("/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({message: text})
+    })
+    .then(res => res.json())
+    .then(data => {
+        addMessage(data.reply, "bot");
+        showButtons(data.buttons);
+    });
+}
+
+function showButtons(buttons){
+    const area = document.getElementById("button-area");
+    area.innerHTML = "";
+
+    buttons.forEach(btn => {
+        const button = document.createElement("button");
+        button.innerText = btn.text;
+        button.onclick = () => menuClick(btn.callback);
+        area.appendChild(button);
+    });
+}
+
+<!--function menuClick(callback){
+    fetch("/menu_click", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({callback: callback})
+    })
+    .then(res => res.json())
+    .then(data => {
+        addMessage(data.reply, "bot");
+        showButtons(data.buttons);
+    });
+}
+</script>
+
+</body>
+</html>
